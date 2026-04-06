@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:amqp="http://www.mulesoft.org/schema/mule/amqp" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/amqp http://www.mulesoft.org/schema/mule/amqp/current/mule-amqp.xsd">
+	<sub-flow name="send-email-notification-process-subflow" doc:id="fd0b460c-ba8e-4df5-b518-f81ffae7c005" >
+		<ee:transform doc:name="logParams" doc:id="79c2a22a-04ef-48ca-b0d1-43758b8dd491">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="logParams"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"tracepoint": "Sub Flow Entry",
+	"source": flow.name,
+	"message": "Consumed contact info from RabbitMq: " ++ (Mule::p('rabbitmq.queueName') default ""),
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="LOG: Entry" doc:id="215debc1-c581-4bac-b9da-d398e067dc91" name="info-logging-subflow" />
+		<try doc:name="Try" doc:id="da9c90a6-3342-4b00-8ad5-61aea03541ce" >
+			<os:retrieve doc:name="retrieve previous update" doc:id="f698a69b-8f47-45f2-a89c-78f4f544ae0f" key="#[vars.currentData.Id]" target="previousUpdate">
+			<os:default-value><![CDATA[#[%dw 2.0
+output application/json
+---
+{}]]]></os:default-value>
+		</os:retrieve>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="82dcba92-97cd-439f-bc38-9331d3164281" type="ANY">
+					<ee:transform doc:name="httpStatus" doc:id="e0007cf9-0939-4960-a93e-4ded890d08df" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable resource="dwl/error/error_status_code.dwl" variableName="httpStatus" />
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="prepare-error-response-subflow" doc:id="8ae62b5b-89e4-4dfe-af6e-f9a296ce7c32" name="prepare-error-response-subflow" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<choice doc:name="CHECK IF: previous updates exist" doc:id="ec6ddbc0-f8a5-4712-832e-216683c687d5" >
+			<when expression="#[!isEmpty(vars.previousUpdate)]">
+				<ee:transform doc:name="check updates" doc:id="fb4773c5-c464-4fb1-b420-7d5d9421fc9a" >
+					<ee:message >
+						<ee:set-payload resource="dwl/check_current_update.dwl" />
+					</ee:message>
+				</ee:transform>
+				<ee:transform doc:name="parse" doc:id="999f1e46-43d0-499e-a6c4-5c4c50330d73" >
+					<ee:message >
+						<ee:set-payload resource="dwl/html_parse_payload.dwl" />
+					</ee:message>
+				</ee:transform>
+				<parse-template doc:name="html email template" doc:id="3e61295b-5dab-407f-9a84-5f2ba80c091e" location="template/email-with-updated-details-template.html" />
+			</when>
+			<otherwise >
+				<parse-template doc:name="html email template" doc:id="4c69c7f0-4377-4a1c-852a-00a2536e6081" location="template/email-template.html" />
+			</otherwise>
+		</choice>
+		<flow-ref doc:name="send-email-subflow" doc:id="36a8620d-5c19-41fc-ba10-f95d23b2c797" name="send-email-subflow" />
+		<choice doc:name="CHECK IF: error exist" doc:id="ce14e2be-dd0b-4dab-b61c-3967b93a566d" >
+			<when expression="#[vars.sendEmailError == true]">
+				<amqp:reject doc:name="queueAckId" doc:id="1df8ee61-4a89-44bb-ad12-e468121062dd" ackId="#[vars.queueAckId]"/>
+			</when>
+			<otherwise >
+				<amqp:ack doc:name="queueAckId" doc:id="473f7702-05b9-4607-946f-759b756bf7a5" ackId="#[vars.queueAckId]" />
+				<os:store doc:name="store current update" doc:id="581c71fd-cfc6-49e2-ac0c-c3356a32b6af" key="#[vars.currentData.Id]">
+			<os:value><![CDATA[#[%dw 2.0
+output application/json
+---
+vars.currentData]]]></os:value>
+		</os:store>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="logParams" doc:id="3a6785be-e2de-4ae1-a386-68dcf0606711" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="logParams" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"tracepoint": "Sub Flow Exit",
+	"source": flow.name,
+	"message": if(vars.sendEmailError == true) "Error occurred when sending email notification to the customer. Message published to DLQ"
+			else "Email notification sent to the customer. Acknowledged the message.",
+	"parameters": {
+		"ContactId": (vars.currentData.Id default "N/A")
+	}
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="LOG: Exit" doc:id="3ec2207e-37e9-49da-9d2f-ee3ef1adb0a4" name="info-logging-subflow" />
+	</sub-flow>
+	<sub-flow name="send-email-subflow" doc:id="a597149d-a97e-4a7e-b94f-667560ade687">
+		<until-successful maxRetries="${retry.count}" doc:name="Until Successful" doc:id="2567f524-3af3-4ce9-9372-000385e42c4c" millisBetweenRetries="${retry.frequency}">
+				<try doc:name="Try" doc:id="9ace5520-7d40-40e1-934c-72d29c981b44">
+				<email:send doc:name="send notification" doc:id="f52dd114-8642-4173-9bb4-c0d55b96c8c7" config-ref="email_smtp_config" fromAddress="${email.username}" subject="${email.subject}" toAddresses='#[[vars.currentData.Email]]'>
+					<email:body contentType="text/html" />
+				</email:send>
+				<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a8e3533d-4f4b-42f4-b65a-e70fe042b9f0" type="EMAIL:CONNECTIVITY">
+							<ee:transform doc:name="error" doc:id="902ba4cb-18a8-4475-8ed3-8f8662908f69">
+								<ee:message />
+								<ee:variables>
+									<ee:set-variable resource="dwl/error/error_response.dwl" variableName="error" />
+								</ee:variables>
+							</ee:transform>
+						</on-error-propagate>
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="37af513c-5964-4307-b418-2b09af45134f" type="ANY">
+						<ee:transform doc:name="httpStatus, sendEmailError" doc:id="f747b221-fab6-4ebb-ae27-ee276fc63e88">
+							<ee:message />
+							<ee:variables>
+								<ee:set-variable resource="dwl/error/error_status_code.dwl" variableName="httpStatus" />
+								<ee:set-variable variableName="sendEmailError" ><![CDATA[%dw 2.0
+output application/json
+---
+true]]></ee:set-variable>
+							</ee:variables>
+						</ee:transform>
+						<flow-ref doc:name="prepare-error-response-subflow" doc:id="00f68953-b9d1-4c1b-a755-97f16bc2f976" name="prepare-error-response-subflow" />
+					</on-error-continue>
+				</error-handler>
+			</try>
+			</until-successful>
+	</sub-flow>
+</mule>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:amqp="http://www.mulesoft.org/schema/mule/amqp"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/amqp http://www.mulesoft.org/schema/mule/amqp/current/mule-amqp.xsd">
+	<error-handler name="global-error-handler" doc:id="af1542e6-2673-4004-a13d-cd702c73a1e7" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="807b66db-4138-4aa6-871f-4fb550902d72" type="MULE:RETRY_EXHAUSTED">
+			<amqp:reject doc:name="queueAckId" doc:id="303d4ea9-9c2a-46fc-bd12-7776f33865ff" ackId="#[vars.queueAckId]" requeue="true"/>
+			<ee:transform doc:name="logParams" doc:id="d9bb99eb-41b2-43dd-bdbb-0cd53d2e6711">
+				<ee:message />
+				<ee:variables>
+					<ee:set-variable variableName="logParams"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"tracepoint": "Info Log",
+	"source": flow.name,
+	"message": "Error occurred when sending email notification to the customer. Message Requeued",
+	"parameters": {
+		"ContactId": (vars.currentData.Id default "N/A")
+	}
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<flow-ref doc:name="LOG: Info" doc:id="1e982af8-ef1d-4c94-a7c2-177042510878" name="info-logging-subflow" />
+			<flow-ref doc:name="prepare-error-response-subflow" doc:id="20260424-c623-4510-883b-56974bcc3eb1" name="prepare-error-response-subflow" />
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="580a93b6-99e8-4450-808d-ba89060c31e2" type="ANY" >
+			<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;(error.errorMessage.attributes.statusCode) default 500]" doc:name="httpStatus" doc:id="1b19e41a-8077-4c02-ab07-568b868f0a56" variableName="httpStatus" />
+			<flow-ref doc:name="prepare-error-response-subflow" doc:id="a165d704-a9e0-4c9b-9fb3-441b4903a0e0" name="prepare-error-response-subflow" />
+		</on-error-propagate>
+	</error-handler>
+	<sub-flow name="prepare-error-response-subflow" doc:id="4d58619e-5fa6-4d04-ad00-d2c1da3f4c88" >
+		<ee:transform doc:name="compose error payload" doc:id="e5743b1c-970b-4251-b030-eb1e837da1fb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json skipNullOn = "everywhere"
+import modules::Error
+
+var errorResponse = Error::response(error)
+var errorMessage = Error::message(error)
+---
+if(!isEmpty(vars.error))
+{"ContactId": vars.currentData.Id default null} ++ vars.error
+else
+{
+	"ContactId": vars.currentData.Id default null,
+	"errorType": errorResponse.error,
+	"statusCode": vars.httpStatus,
+	"errorMessage": errorMessage,
+	"extraDetails": if (!isEmpty(errorResponse.errorDetails)) (errorResponse.errorDetails)
+			else if (!isEmpty(error.errorMessage.payload)) (error.errorMessage.payload)
+			else null
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<remove-variable doc:name="error" doc:id="be8c4925-e0e4-4fd1-8172-aae5de880313" variableName="error"/>
+		<ee:transform doc:name="logParams" doc:id="833409eb-1806-4335-a27a-33d4ad08d316" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="logParams" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"tracepoint": "Error Handler",
+	"source": flow.name,
+	"errorDetails": payload
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="LOG: ERROR" doc:id="8bc8bd6e-5ae5-4b34-9301-95b35a3e7b48" name="error-logging-subflow" />
+	</sub-flow>
+</mule>

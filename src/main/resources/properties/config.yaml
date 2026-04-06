@@ -1,0 +1,10 @@
+connection:
+  timeout: "60000"
+response:
+  timeout: "90000"
+
+retry:
+  count: "3"
+  frequency: "5000"
+
+timezone: "UTC"

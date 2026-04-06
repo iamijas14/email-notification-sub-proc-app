@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<sub-flow name="info-logging-subflow" doc:id="cc641ec9-cfcf-40c8-90ce-3f35ab7cd3fd" >
+		<logger level="INFO" doc:name="INFO" doc:id="f600a599-2dbd-4ba9-ae78-644c64f8a1b7" message="#[%dw 2.0&#10;output application/json skipNullOn = &quot;everywhere&quot;&#10;---&#10;{&#10;	&quot;tracepoint&quot;: vars.logParams.tracepoint,&#10;	&quot;timestamp&quot;:  (now() as DateTime &gt;&gt; Mule::p('timezone')) as String {format: &quot;yyyy-MM-dd'T'HH:mm:ss.SSS'Z'&quot;},&#10;	&quot;correlationId&quot;: vars.correlationId,&#10;	&quot;severity&quot;: &quot;INFO&quot;,&#10;	&quot;category&quot;: &quot;INTEGRATION&quot;,&#10;	&quot;environment&quot;: Mule::p('mule.env'),&#10;	&quot;applicationName&quot;: Mule::p('app.name') default &quot;N/A&quot;,&#10;	&quot;layer&quot;: &quot;PROCESS&quot;,&#10;	&quot;httpMethod&quot;: vars.requestMethod,&#10;	&quot;requestPath&quot;: vars.requestPath,&#10;	&quot;source&quot;: vars.logParams.source default &quot;N/A&quot;,&#10;	&quot;message&quot;: vars.logParams.message default &quot;N/A&quot;,&#10;	&quot;logParams&quot;: vars.logParams.parameters default &quot;N/A&quot;,&#10;}]"/>
+		<remove-variable doc:name="logParams" doc:id="71ccd02b-aac7-44ba-a1cb-7e0f8a4e7063" variableName="logParams"/>
+	</sub-flow>
+	<sub-flow name="error-logging-subflow" doc:id="989bff5a-eb27-428e-8d0e-aee07f9fddc6" >
+		<logger level="ERROR" doc:name="ERROR" doc:id="24e77648-5f31-4235-b280-7071062d8b02" message="#[%dw 2.0&#10;output application/json skipNullOn = &quot;everywhere&quot;&#10;---&#10;{&#10;	&quot;tracepoint&quot;: vars.logParams.tracepoint,&#10;	&quot;timestamp&quot;:  (now() as DateTime &gt;&gt; Mule::p('timezone')) as String {format: &quot;yyyy-MM-dd'T'HH:mm:ss.SSS'Z'&quot;},&#10;	&quot;correlationId&quot;: vars.correlationId,&#10;	&quot;severity&quot;: &quot;ERROR&quot;,&#10;	&quot;category&quot;: &quot;INTEGRATION&quot;,&#10;	&quot;environment&quot;: Mule::p('mule.env'),&#10;	&quot;applicationName&quot;: Mule::p('app.name') default &quot;N/A&quot;,&#10;	&quot;layer&quot;: &quot;PROCESS&quot;,&#10;	&quot;httpMethod&quot;: vars.requestMethod,&#10;	&quot;requestPath&quot;: vars.requestPath,&#10;	&quot;source&quot;: vars.logParams.source default &quot;N/A&quot;,&#10;	&quot;message&quot;: vars.logParams.message default &quot;N/A&quot;,&#10;	&quot;error&quot;: vars.logParams.errorDetails default &quot;N/A&quot;&#10;}]"/>
+		<remove-variable doc:name="logParams" doc:id="94d6ab1b-c5c1-4114-a40b-89c2c5ab493a" variableName="logParams"/>
+	</sub-flow>
+</mule>

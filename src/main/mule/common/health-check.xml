@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<sub-flow name="api-health-check-subflow" doc:id="f2062684-0918-4582-86fe-c55ef2b4aef7" >
+		<ee:transform doc:name="logParams" doc:id="1df896b1-3aa4-4596-bf33-6bf98fe49fae" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="logParams" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"tracepoint": "Sub Flow Entry",
+	"source": flow.name
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="LOG: Entry" doc:id="1cb1a6a4-f067-406f-97e6-b32f392ff076" name="info-logging-subflow" />
+		<ee:transform doc:name="payload" doc:id="ad526e1e-0578-47c5-9b75-97c1722e9cae">
+					<ee:message>
+				<ee:set-payload resource="dwl/health_check_response.dwl" />
+					</ee:message>
+				</ee:transform>
+		<ee:transform doc:name="logParams" doc:id="82f84666-b662-4955-83d7-ed703d2d049a" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="logParams" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"tracepoint": "Sub Flow Exit",
+	"source": flow.name,
+	"parameters": {
+		"Health check response": payload
+	}
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="LOG: Exit" doc:id="17bd9c7b-81ab-4a0f-9c60-c0995fab3a2e" name="info-logging-subflow" />
+	</sub-flow>
+</mule>
