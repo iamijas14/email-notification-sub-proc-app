@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="email-notification-sub-proc-test-suite.xml" />
+	<munit:test name="email-notification-sub-proc-main-flow-test" doc:id="fd9b85a0-e34b-4c2e-aa3a-e3fc5010caf4" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="mock os" doc:id="da052a5f-69c1-4f82-90e6-9b72018fb03f" processor="os:retrieve">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="f698a69b-8f47-45f2-a89c-78f4f544ae0f" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:variables >
+						<munit-tools:variable key="previousUpdate" value="#[%dw 2.0 output application/json --- readUrl('classpath:///sub/previous_contact_record.dwl')]" mediaType="application/json" encoding="UTF-8" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock email" doc:id="25d189d2-59ce-4bf8-a5a8-e85978d79b15" processor="email:send">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="f52dd114-8642-4173-9bb4-c0d55b96c8c7" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock amqp" doc:id="6db78d0e-1c9c-4a73-a265-b0b11ae8e4f4" processor="amqp:ack">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="473f7702-05b9-4607-946f-759b756bf7a5" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock os" doc:id="69e7c1c0-8476-460a-9823-4268ef67e2fe" processor="os:store">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="581c71fd-cfc6-49e2-ac0c-c3356a32b6af" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="payload, queueAckId" doc:id="533ec96d-407f-4159-9903-be041c952a82">
+				<munit:payload value="#[%dw 2.0&#10;output application/json&#10;--- &#10;readUrl('classpath://sub/salesforce_contact_record.dwl')]" encoding="UTF-8" mediaType="application/json" />
+				<munit:variables >
+					<munit:variable key="queueAckId" value='#[%dw 2.0 output application/json --- "1-1-quejndn12mx"]' encoding="UTF-8" mediaType="application/json" />
+				</munit:variables>
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to abc-travels-email-notification-pub-flow" doc:id="e4dc4403-b204-4836-bc25-646e4a92cccb" name="abc-travels-email-notification-pub-flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Exit" doc:id="a93e15c2-bf8f-4d4c-aaad-53cc30115662" processor="flow-ref">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="3ec2207e-37e9-49da-9d2f-ee3ef1adb0a4" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="email-notification-sub-proc-subflow-no-previous-update-test" doc:id="0f1fc8f2-211d-4631-bd35-aa12f700905d" description="Test" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="mock os" doc:id="1205916c-adeb-459d-9e84-a7baf9ab83d3" processor="os:retrieve" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="f698a69b-8f47-45f2-a89c-78f4f544ae0f" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:variables >
+						<munit-tools:variable key="previousUpdate" value="#[%dw 2.0 output application/json --- {}]" mediaType="application/json" encoding="UTF-8" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock email" doc:id="dabc0e68-610c-4ee8-adfd-829971eb1ea7" processor="email:send" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="f52dd114-8642-4173-9bb4-c0d55b96c8c7" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock amqp" doc:id="5ada3f08-0c06-4651-8207-5089e530508e" processor="amqp:ack" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="473f7702-05b9-4607-946f-759b756bf7a5" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock os" doc:id="b0af069b-d5f3-47ae-8ae9-f6946739f1ff" processor="os:store" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="581c71fd-cfc6-49e2-ac0c-c3356a32b6af" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="currentData, queueAckId" doc:id="ed2f9913-b17b-4e10-aa14-9394a2b054af" >
+				<munit:variables >
+					<munit:variable key="currentData" value="#[%dw 2.0 output application/json --- readUrl('classpath://sub/salesforce_contact_record.dwl')]" encoding="UTF-8" mediaType="application/json" />
+					<munit:variable key="queueAckId" value='#[%dw 2.0 output application/json --- "1-1-quejndn12mx"]' encoding="UTF-8" mediaType="application/json" />
+				</munit:variables>
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to send-email-notification-process-subflow" doc:id="ab63d101-cfef-47b9-90fe-bb0ec301f3a9" name="send-email-notification-process-subflow" />
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Exit" doc:id="5f7169b7-894f-429f-924f-ded723713911" processor="flow-ref" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="3ec2207e-37e9-49da-9d2f-ee3ef1adb0a4" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="email-notification-sub-proc-subflow-non-retry-error-test" doc:id="26dd1b1b-7aa0-49d0-8578-e0720d84a162" description="Test" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="mock os" doc:id="1eb183d8-54ef-4e26-96b5-163dc8f5f06a" processor="os:retrieve" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="f698a69b-8f47-45f2-a89c-78f4f544ae0f" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:variables >
+						<munit-tools:variable key="previousUpdate" value="#[%dw 2.0 output application/json --- {}]" mediaType="application/json" encoding="UTF-8" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock email" doc:id="ea6d60ca-7b5e-4af0-a1f0-9c375abadc2d" processor="email:send" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="f52dd114-8642-4173-9bb4-c0d55b96c8c7" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="ANY" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock amqp" doc:id="7950aa83-08ac-4b03-a995-372fbd5eef13" processor="amqp:reject" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="1df8ee61-4a89-44bb-ad12-e468121062dd" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="currentData, queueAckId" doc:id="7746ea41-7e57-430f-9eca-7efa48764a54" >
+				<munit:variables >
+					<munit:variable key="currentData" value="#[%dw 2.0 output application/json --- readUrl('classpath://sub/salesforce_contact_record.dwl')]" encoding="UTF-8" mediaType="application/json" />
+					<munit:variable key="queueAckId" value='#[%dw 2.0 output application/json --- "1-1-quejndn12mx"]' encoding="UTF-8" mediaType="application/json" />
+				</munit:variables>
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to send-email-notification-process-subflow" doc:id="4dcec56e-1533-41ce-bef5-bfed443dfa5a" name="send-email-notification-process-subflow" />
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Error" doc:id="12ce7963-938b-456a-9df3-5f6561a0bb98" processor="flow-ref" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="00f68953-b9d1-4c1b-a755-97f16bc2f976" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="00f68953-b9d1-4c1b-a755-97f16bc2f976" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="email-notification-sub-proc-main-flow-retry-error-test" doc:id="39d851d7-8b76-4450-a6b1-5ce2ea043c38" description="Test" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="mock os" doc:id="fee65a36-cc08-42cf-844f-3df86c8ecb3a" processor="os:retrieve" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="f698a69b-8f47-45f2-a89c-78f4f544ae0f" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:variables >
+						<munit-tools:variable key="previousUpdate" value="#[%dw 2.0 output application/json --- readUrl('classpath:///sub/previous_contact_record.dwl')]" mediaType="application/json" encoding="UTF-8" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock email" doc:id="43262b7e-d99a-41dd-be6e-c02ab67a1679" processor="email:send" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="f52dd114-8642-4173-9bb4-c0d55b96c8c7" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="EMAIL:CONNECTIVITY" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock amqp" doc:id="08c9390c-002a-4bed-9bc3-cc413cd7a310" processor="amqp:reject" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="303d4ea9-9c2a-46fc-bd12-7776f33865ff" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="payload, queueAckId" doc:id="1932ab4b-d83d-4d97-b9af-8be697436d9b">
+				<munit:payload value="#[%dw 2.0&#10;output application/json&#10;--- &#10;readUrl('classpath://sub/salesforce_contact_record.dwl')]" encoding="UTF-8" mediaType="application/json" />
+				<munit:variables >
+					<munit:variable key="queueAckId" value='#[%dw 2.0 output application/json --- "1-1-quejndn12mx"]' encoding="UTF-8" mediaType="application/json" />
+				</munit:variables>
+			</munit:set-event>
+			<try doc:name="Try" doc:id="ab2677eb-e3a6-4faa-bcb7-961a46f1df35" >
+				<flow-ref doc:name="Flow-ref to abc-travels-email-notification-pub-flow" doc:id="30815332-b088-47cd-960e-adb9b6d1644b" name="abc-travels-email-notification-pub-flow" />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="87302966-e671-4a53-9bdf-7398467422e7" >
+						<logger level="INFO" doc:name="Exception" doc:id="e02519b1-632c-48e3-adce-998122e7f636" />
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Error" doc:id="43f8f5a0-71b3-4aa5-af78-cc81b93bca00" processor="flow-ref" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="8bc8bd6e-5ae5-4b34-9301-95b35a3e7b48" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="email-notification-sub-proc-main-flow-error-test" doc:id="95870283-93f1-462d-9ec8-d75df614cdee" description="Test" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="mock" doc:id="75a4ff73-33d7-42d7-8249-a57f86606110" processor="flow-ref" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="ec48146b-af49-485f-866b-d73273209803" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="ANY" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="payload, queueAckId" doc:id="1fefa9f6-0be7-448e-8301-18052ed0f6d6" >
+				<munit:payload value="#[%dw 2.0&#10;output application/json&#10;--- &#10;readUrl('classpath://sub/salesforce_contact_record.dwl')]" encoding="UTF-8" mediaType="application/json" />
+				<munit:variables >
+					<munit:variable key="queueAckId" value='#[%dw 2.0 output application/json --- "1-1-quejndn12mx"]' encoding="UTF-8" mediaType="application/json" />
+				</munit:variables>
+			</munit:set-event>
+			<try doc:name="Try" doc:id="855fc1f0-bc21-4731-8ea2-00baeb1aeee2" >
+				<flow-ref doc:name="Flow-ref to abc-travels-email-notification-pub-flow" doc:id="83ec560a-15fe-4640-ba90-3117604b7e62" name="abc-travels-email-notification-pub-flow" />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="74386eb9-f500-406c-bf4d-9e587cc0bf4d" >
+						<logger level="INFO" doc:name="Exception" doc:id="625d09f2-d2ee-4144-a9b4-9c8952e30d80" />
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Error" doc:id="12561b97-f25e-4f24-a936-75cbb11cae0c" processor="flow-ref" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="8bc8bd6e-5ae5-4b34-9301-95b35a3e7b48" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="email-notification-sub-proc-subflow-os-error-test" doc:id="ae061344-7ac7-441d-871d-6f63be5db4e4" description="Test" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="mock os" doc:id="7b320c14-f83f-4f16-af73-6ef11a3cff7e" processor="os:retrieve" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="f698a69b-8f47-45f2-a89c-78f4f544ae0f" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="ANY" />
+					<munit-tools:variables >
+						<munit-tools:variable key="previousUpdate" value="#[%dw 2.0 output application/json --- {}]" mediaType="application/json" encoding="UTF-8" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock email" doc:id="2d3480dc-ba3a-4d2d-ae9d-ea8a3e9ba240" processor="email:send" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="f52dd114-8642-4173-9bb4-c0d55b96c8c7" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock amqp" doc:id="e2f9b047-8b1f-4bda-ba06-d64323e08ebb" processor="amqp:ack" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="473f7702-05b9-4607-946f-759b756bf7a5" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock os" doc:id="e2349219-429e-4040-9e19-96eb0b43c6c5" processor="os:store" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="581c71fd-cfc6-49e2-ac0c-c3356a32b6af" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="currentData, queueAckId" doc:id="6a319b9c-83da-4f44-80d2-a932d4124552" >
+				<munit:variables >
+					<munit:variable key="currentData" value="#[%dw 2.0 output application/json --- readUrl('classpath://sub/salesforce_contact_record.dwl')]" encoding="UTF-8" mediaType="application/json" />
+					<munit:variable key="queueAckId" value='#[%dw 2.0 output application/json --- "1-1-quejndn12mx"]' encoding="UTF-8" mediaType="application/json" />
+				</munit:variables>
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to send-email-notification-process-subflow" doc:id="336b2774-4de1-4e87-80f6-5fae6341d849" name="send-email-notification-process-subflow" />
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Exit" doc:id="3da1592f-3464-4a8e-aaf7-dcc855ec6c58" processor="flow-ref" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="3ec2207e-37e9-49da-9d2f-ee3ef1adb0a4" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+
+
+</mule>

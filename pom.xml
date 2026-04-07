@@ -4,7 +4,7 @@
 
 	<groupId>da9085ea-a5b2-43d2-b8ed-bf7804c3ebb0</groupId>
 	<artifactId>abc-travels-email-notification-sub-proc-app</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.1</version>
 	<packaging>mule-application</packaging>
 
 	<name>abc-travels-email-notification-sub-proc</name>
@@ -15,6 +15,7 @@
 
 		<app.runtime>4.11.0</app.runtime>
 		<mule.maven.plugin.version>4.7.0</mule.maven.plugin.version>
+		<munit.version>3.7.0</munit.version>
 	</properties>
 
 	<build>
@@ -29,6 +30,29 @@
 				<artifactId>mule-maven-plugin</artifactId>
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
+			</plugin>
+			<plugin>
+				<groupId>com.mulesoft.munit.tools</groupId>
+				<artifactId>munit-maven-plugin</artifactId>
+				<version>${munit.version}</version>
+				<executions>
+					<execution>
+						<id>test</id>
+						<phase>test</phase>
+						<goals>
+							<goal>test</goal>
+							<goal>coverage-report</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<coverage>
+						<runCoverage>true</runCoverage>
+						<formats>
+							<format>html</format>
+						</formats>
+					</coverage>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -63,6 +87,26 @@
 			<artifactId>mule-amqp-connector</artifactId>
 			<version>1.9.0</version>
 			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>com.mulesoft.munit</groupId>
+			<artifactId>munit-runner</artifactId>
+			<version>3.7.0</version>
+			<classifier>mule-plugin</classifier>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.mulesoft.munit</groupId>
+			<artifactId>munit-tools</artifactId>
+			<version>3.7.0</version>
+			<classifier>mule-plugin</classifier>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.weave</groupId>
+			<artifactId>assertions</artifactId>
+			<version>1.2.1</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
