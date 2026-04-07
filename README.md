@@ -36,4 +36,4 @@ This application consumes messages from RabbitMQ and sends email notifications.
 - Error handling with global handler
 
 ## 🚀 Deployment
-- CloudHub
+- CloudHub 2.0
