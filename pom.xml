@@ -4,7 +4,7 @@
 
 	<groupId>da9085ea-a5b2-43d2-b8ed-bf7804c3ebb0</groupId>
 	<artifactId>abc-travels-email-notification-sub-proc-app</artifactId>
-	<version>1.0.1</version>
+	<version>1.0.2</version>
 	<packaging>mule-application</packaging>
 
 	<name>abc-travels-email-notification-sub-proc</name>

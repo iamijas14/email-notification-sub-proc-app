@@ -1,0 +1,16 @@
+#RabbitMq config
+rabbitmq:
+  host: "lionfish.rmq.cloudamqp.com"
+  port: "5671"
+  vhost: "xplbkkza"
+  username: "xplbkkza"
+  password: "dummy"
+  queueName: "contact-notification-queue"
+  
+#email config
+email:
+  host: "smtp.gmail.com"
+  port: "25"
+  username: "dummy"
+  password: "dummy"
+  subject: "Salesforce Contact Update Notification"
